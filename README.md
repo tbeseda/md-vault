@@ -11,8 +11,7 @@ Requires macOS 26.
 ### Homebrew
 
 ```sh
-brew tap tbeseda/tap
-brew install --cask md-vault
+brew install --cask tbeseda/tap/md-vault
 ```
 
 ### Manual
@@ -42,4 +41,4 @@ xcodebuild -project md-vault.xcodeproj -scheme md-vault test
 
 ## Releasing
 
-Pushing a `v*` tag triggers [release.yml](.github/workflows/release.yml): it runs the tests, builds Release, zips the app, publishes a GitHub release with the zip and its SHA256, and bumps the version and sha in the [tbeseda/homebrew-tap](https://github.com/tbeseda/homebrew-tap) cask. Bump `MARKETING_VERSION` in the pbxproj to match the tag before tagging.
+Pushing a `v*` tag triggers [release.yml](.github/workflows/release.yml): it runs the tests, builds Release, zips the app, publishes a GitHub release with the zip and its SHA256, and bumps the version and sha in the [tbeseda/homebrew-tap](https://github.com/tbeseda/homebrew-tap) cask. The tag is the only place a version is declared; CI injects it into the app bundle via `MARKETING_VERSION`.
