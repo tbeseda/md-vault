@@ -35,4 +35,59 @@ struct VaultItemTests {
         let bogus = URL(filePath: "/nonexistent/\(UUID().uuidString)")
         #expect(VaultItem.buildTree(at: bogus).isEmpty)
     }
+
+    // MARK: - moveDestination (pure planning; no filesystem)
+
+    private let vault = URL(filePath: "/tmp/vault")
+
+    private func plan(_ source: String, into directory: String) -> String? {
+        VaultItem.moveDestination(
+            for: URL(filePath: source),
+            into: URL(filePath: directory),
+            vaultURL: vault
+        )?.path(percentEncoded: false)
+    }
+
+    @Test func movesFileIntoFolder() {
+        #expect(plan("/tmp/vault/a.md", into: "/tmp/vault/dir") == "/tmp/vault/dir/a.md")
+    }
+
+    @Test func movesNestedFileToVaultRoot() {
+        #expect(plan("/tmp/vault/dir/a.md", into: "/tmp/vault") == "/tmp/vault/a.md")
+    }
+
+    @Test func movesFolderIntoSiblingFolder() {
+        #expect(plan("/tmp/vault/dir", into: "/tmp/vault/other") == "/tmp/vault/other/dir")
+    }
+
+    @Test func ignoresSameParentMove() {
+        #expect(plan("/tmp/vault/dir/a.md", into: "/tmp/vault/dir") == nil)
+        #expect(plan("/tmp/vault/a.md", into: "/tmp/vault") == nil)
+    }
+
+    @Test func ignoresFolderIntoItselfOrDescendant() {
+        #expect(plan("/tmp/vault/dir", into: "/tmp/vault/dir") == nil)
+        #expect(plan("/tmp/vault/dir", into: "/tmp/vault/dir/sub") == nil)
+    }
+
+    @Test func ignoresSourcesOutsideVault() {
+        #expect(plan("/tmp/elsewhere/a.md", into: "/tmp/vault/dir") == nil)
+        #expect(plan("/tmp/vault", into: "/tmp/vault/dir") == nil)
+        // Sibling path sharing the vault's name as a prefix is still outside.
+        #expect(plan("/tmp/vault-other/a.md", into: "/tmp/vault/dir") == nil)
+    }
+
+    @Test func ignoresTargetsOutsideVault() {
+        #expect(plan("/tmp/vault/a.md", into: "/tmp/elsewhere") == nil)
+        #expect(plan("/tmp/vault/a.md", into: "/tmp/vault-other") == nil)
+    }
+
+    @Test func trailingSlashAndDirectoryHintsDoNotConfusePlanning() {
+        let destination = VaultItem.moveDestination(
+            for: URL(filePath: "/tmp/vault/dir/", directoryHint: .isDirectory),
+            into: URL(filePath: "/tmp/vault/other/", directoryHint: .isDirectory),
+            vaultURL: URL(filePath: "/tmp/vault/", directoryHint: .isDirectory)
+        )
+        #expect(destination?.path(percentEncoded: false) == "/tmp/vault/other/dir")
+    }
 }

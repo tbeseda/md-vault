@@ -4,6 +4,7 @@ struct FileTreeRowView: View {
     @Environment(AppState.self) private var appState
     let item: VaultItem
     @State private var draftName = ""
+    @State private var isDropTargeted = false
     @FocusState private var nameFieldFocused: Bool
 
     var body: some View {
@@ -25,6 +26,17 @@ struct FileTreeRowView: View {
         } else {
             Label(item.name, systemImage: icon)
                 .foregroundStyle(item.isDirectory || item.isMarkdown ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .draggable(item.url)
+                .dropDestination(for: URL.self) { urls, _ in
+                    // A drop on a folder moves into it; a drop on a file
+                    // moves to the file's level, like Finder's list view.
+                    appState.move(urls, into: item.isDirectory ? item.url : item.url.deletingLastPathComponent())
+                } isTargeted: { targeted in
+                    isDropTargeted = targeted && item.isDirectory
+                }
+                .background(.tint.opacity(isDropTargeted ? 0.2 : 0), in: RoundedRectangle(cornerRadius: 4))
         }
     }
 

@@ -182,6 +182,52 @@ final class AppState {
         }
     }
 
+    /// Move a file or folder to the Trash. Recoverable via Finder, so no
+    /// confirmation, matching Finder's own behavior. If the open document was
+    /// the item or inside it, the rescan drops it (same path as an external
+    /// delete), which also cancels any pending autosave that would otherwise
+    /// re-create the file.
+    func trash(_ url: URL) {
+        do {
+            try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+            rescanTree()
+            fileOpErrorMessage = nil
+        } catch {
+            fileOpErrorMessage = "Could not delete \(url.lastPathComponent): \(error.localizedDescription)"
+        }
+    }
+
+    /// Move dragged items into a folder. Drops that would be no-ops or leave
+    /// the vault are ignored by the planner; name collisions surface as errors.
+    @discardableResult
+    func move(_ sources: [URL], into directory: URL) -> Bool {
+        guard let vaultURL else { return false }
+        fileOpErrorMessage = nil
+        var moved = false
+        for rawSource in sources {
+            let source = URL(filePath: VaultItem.path(of: rawSource))
+            guard let destination = VaultItem.moveDestination(for: source, into: directory, vaultURL: vaultURL) else { continue }
+            guard !FileManager.default.fileExists(atPath: destination.path(percentEncoded: false)) else {
+                fileOpErrorMessage = "\(destination.lastPathComponent) already exists there."
+                continue
+            }
+            do {
+                try FileManager.default.moveItem(at: source, to: destination)
+                if let updated = Self.adjustURL(openDocument?.url, from: source, to: destination) {
+                    openDocument?.relocate(to: updated)
+                }
+                if let updated = Self.adjustURL(selectedFileURL, from: source, to: destination) {
+                    selectedFileURL = updated
+                }
+                moved = true
+            } catch {
+                fileOpErrorMessage = "Could not move \(source.lastPathComponent): \(error.localizedDescription)"
+            }
+        }
+        if moved { rescanTree() }
+        return moved
+    }
+
     /// Map a URL affected by a move (the item itself or a descendant) to its
     /// new location; nil if unaffected.
     private static func adjustURL(_ url: URL?, from oldURL: URL, to newURL: URL) -> URL? {

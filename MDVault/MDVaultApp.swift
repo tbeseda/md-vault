@@ -18,6 +18,12 @@ struct MDVaultApp: App {
                 Divider()
                 Button("Open Vault…") { appState.chooseVault() }
                     .keyboardShortcut("o", modifiers: [.command, .shift])
+                Divider()
+                Button("Move to Trash") {
+                    if let url = appState.selectedFileURL { appState.trash(url) }
+                }
+                .keyboardShortcut(.delete, modifiers: .command)
+                .disabled(appState.selectedFileURL == nil)
             }
             CommandGroup(replacing: .saveItem) {
                 Button("Save") { appState.openDocument?.saveCommand() }
