@@ -1,0 +1,119 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A100000000000000000001 = {isa = PBXBuildFile; fileRef = B100000000000000000001; };
+		A100000000000000000002 = {isa = PBXBuildFile; fileRef = B100000000000000000002; };
+		A100000000000000000003 = {isa = PBXBuildFile; fileRef = B100000000000000000003; };
+		A100000000000000000004 = {isa = PBXBuildFile; fileRef = B100000000000000000004; };
+		A100000000000000000005 = {isa = PBXBuildFile; fileRef = B100000000000000000005; };
+		A100000000000000000006 = {isa = PBXBuildFile; fileRef = B100000000000000000006; };
+		A100000000000000000007 = {isa = PBXBuildFile; fileRef = B100000000000000000007; };
+		A100000000000000000008 = {isa = PBXBuildFile; fileRef = B100000000000000000008; };
+		A100000000000000000009 = {isa = PBXBuildFile; fileRef = B100000000000000000009; };
+		A10000000000000000000A = {isa = PBXBuildFile; fileRef = B10000000000000000000A; };
+		A10000000000000000000B = {isa = PBXBuildFile; fileRef = B10000000000000000000B; };
+		A10000000000000000000C = {isa = PBXBuildFile; fileRef = B10000000000000000000C; };
+		A10000000000000000000D = {isa = PBXBuildFile; fileRef = B10000000000000000000D; };
+		A10000000000000000000E = {isa = PBXBuildFile; fileRef = B10000000000000000000E; };
+		A10000000000000000000F = {isa = PBXBuildFile; fileRef = B10000000000000000000F; };
+		A100000000000000000020 = {isa = PBXBuildFile; productRef = E300000000000000000001; };
+		A200000000000000000001 = {isa = PBXBuildFile; fileRef = B200000000000000000001; };
+		A200000000000000000002 = {isa = PBXBuildFile; fileRef = B200000000000000000002; };
+		A200000000000000000003 = {isa = PBXBuildFile; fileRef = B200000000000000000003; };
+		A200000000000000000004 = {isa = PBXBuildFile; fileRef = B200000000000000000004; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B100000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MDVaultApp.swift"; sourceTree = "<group>"; };
+		B100000000000000000002 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppState.swift"; sourceTree = "<group>"; };
+		B100000000000000000003 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OpenDocument.swift"; sourceTree = "<group>"; };
+		B100000000000000000004 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MarkdownStyler.swift"; sourceTree = "<group>"; };
+		B100000000000000000005 = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
+		B100000000000000000006 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContentView.swift"; sourceTree = "<group>"; };
+		B100000000000000000007 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EditorView.swift"; sourceTree = "<group>"; };
+		B100000000000000000008 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VaultItem.swift"; sourceTree = "<group>"; };
+		B100000000000000000009 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VaultPickerView.swift"; sourceTree = "<group>"; };
+		B10000000000000000000A = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SidebarView.swift"; sourceTree = "<group>"; };
+		B10000000000000000000B = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileTreeRowView.swift"; sourceTree = "<group>"; };
+		B10000000000000000000C = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ExternalChange.swift"; sourceTree = "<group>"; };
+		B10000000000000000000D = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VaultWatcher.swift"; sourceTree = "<group>"; };
+		B10000000000000000000E = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConflictBannerView.swift"; sourceTree = "<group>"; };
+		B10000000000000000000F = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsView.swift"; sourceTree = "<group>"; };
+		B200000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MarkdownStylerTests.swift"; sourceTree = "<group>"; };
+		B200000000000000000002 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VaultItemTests.swift"; sourceTree = "<group>"; };
+		B200000000000000000003 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ExternalChangeTests.swift"; sourceTree = "<group>"; };
+		B200000000000000000004 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OpenDocumentTests.swift"; sourceTree = "<group>"; };
+		C100000000000000000001 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "md-vault.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C100000000000000000002 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MDVaultTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D100000000000000000001 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A100000000000000000020); runOnlyForDeploymentPostprocessing = 0; };
+		D200000000000000000002 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D100000000000000000003 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A100000000000000000005); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXGroup section */
+		E100000000000000000001 = {isa = PBXGroup; children = (E100000000000000000002, E100000000000000000005, E100000000000000000004); sourceTree = "<group>"; };
+		E100000000000000000002 = {isa = PBXGroup; children = (B100000000000000000001, B100000000000000000002, B100000000000000000003, B100000000000000000004, B100000000000000000008, B10000000000000000000C, B10000000000000000000D, B100000000000000000005, E100000000000000000003); path = MDVault; sourceTree = "<group>"; };
+		E100000000000000000003 = {isa = PBXGroup; children = (B100000000000000000006, B100000000000000000007, B100000000000000000009, B10000000000000000000A, B10000000000000000000B, B10000000000000000000E, B10000000000000000000F); path = Views; sourceTree = "<group>"; };
+		E100000000000000000004 = {isa = PBXGroup; children = (C100000000000000000001, C100000000000000000002); name = Products; sourceTree = "<group>"; };
+		E100000000000000000005 = {isa = PBXGroup; children = (B200000000000000000001, B200000000000000000002, B200000000000000000003, B200000000000000000004); path = MDVaultTests; sourceTree = "<group>"; };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F100000000000000000001 = {isa = PBXNativeTarget; buildConfigurationList = F400000000000000000002; buildPhases = (D100000000000000000002, D100000000000000000001, D100000000000000000003); buildRules = (); dependencies = (); name = "md-vault"; packageProductDependencies = (E300000000000000000001); productName = "md-vault"; productReference = C100000000000000000001; productType = "com.apple.product-type.application"; };
+		F100000000000000000002 = {isa = PBXNativeTarget; buildConfigurationList = F400000000000000000003; buildPhases = (D200000000000000000001, D200000000000000000002); buildRules = (); dependencies = (D400000000000000000001); name = MDVaultTests; productName = MDVaultTests; productReference = C100000000000000000002; productType = "com.apple.product-type.bundle.unit-test"; };
+/* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		D300000000000000000001 = {isa = PBXContainerItemProxy; containerPortal = F200000000000000000001; proxyType = 1; remoteGlobalIDString = F100000000000000000001; remoteInfo = "md-vault"; };
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		D400000000000000000001 = {isa = PBXTargetDependency; target = F100000000000000000001; targetProxy = D300000000000000000001; };
+/* End PBXTargetDependency section */
+
+/* Begin PBXProject section */
+		F200000000000000000001 = {isa = PBXProject; buildConfigurationList = F400000000000000000001; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base); mainGroup = E100000000000000000001; packageReferences = (E200000000000000000001); productRefGroup = E100000000000000000004; projectDirPath = ""; projectRoot = ""; targets = (F100000000000000000001, F100000000000000000002); };
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D100000000000000000002 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A100000000000000000001, A100000000000000000002, A100000000000000000003, A100000000000000000004, A100000000000000000008, A10000000000000000000C, A10000000000000000000D, A100000000000000000006, A100000000000000000007, A100000000000000000009, A10000000000000000000A, A10000000000000000000B, A10000000000000000000E, A10000000000000000000F); runOnlyForDeploymentPostprocessing = 0; };
+		D200000000000000000001 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A200000000000000000001, A200000000000000000002, A200000000000000000003, A200000000000000000004); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		F300000000000000000001 = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = dwarf; ENABLE_TESTABILITY = YES; GCC_OPTIMIZATION_LEVEL = 0; ONLY_ACTIVE_ARCH = YES; SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG"; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; MACOSX_DEPLOYMENT_TARGET = 26.0; SDKROOT = macosx; SWIFT_VERSION = 6.0; }; name = Debug; };
+		F300000000000000000002 = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; COPY_PHASE_STRIP = NO; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; SWIFT_OPTIMIZATION_LEVEL = "-O"; MACOSX_DEPLOYMENT_TARGET = 26.0; SDKROOT = macosx; SWIFT_VERSION = 6.0; }; name = Release; };
+		F300000000000000000003 = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; COMBINE_HIDPI_IMAGES = YES; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_NSHumanReadableCopyright = ""; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MARKETING_VERSION = 0.1.0; PRODUCT_BUNDLE_IDENTIFIER = "com.tbeseda.md-vault"; PRODUCT_MODULE_NAME = MDVault; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 6.0; }; name = Debug; };
+		F300000000000000000004 = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; COMBINE_HIDPI_IMAGES = YES; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_NSHumanReadableCopyright = ""; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks"; MARKETING_VERSION = 0.1.0; PRODUCT_BUNDLE_IDENTIFIER = "com.tbeseda.md-vault"; PRODUCT_MODULE_NAME = MDVault; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 6.0; }; name = Release; };
+		F300000000000000000005 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 26.0; PRODUCT_BUNDLE_IDENTIFIER = "com.tbeseda.md-vault.tests"; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 6.0; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/md-vault.app/Contents/MacOS/md-vault"; }; name = Debug; };
+		F300000000000000000006 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; GENERATE_INFOPLIST_FILE = YES; MACOSX_DEPLOYMENT_TARGET = 26.0; PRODUCT_BUNDLE_IDENTIFIER = "com.tbeseda.md-vault.tests"; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 6.0; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/md-vault.app/Contents/MacOS/md-vault"; }; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F400000000000000000001 = {isa = XCConfigurationList; buildConfigurations = (F300000000000000000001, F300000000000000000002); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		F400000000000000000002 = {isa = XCConfigurationList; buildConfigurations = (F300000000000000000003, F300000000000000000004); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		F400000000000000000003 = {isa = XCConfigurationList; buildConfigurations = (F300000000000000000005, F300000000000000000006); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E200000000000000000001 = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/swiftlang/swift-markdown.git"; requirement = {kind = upToNextMinorVersion; minimumVersion = 0.8.0; }; };
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E300000000000000000001 = {isa = XCSwiftPackageProductDependency; package = E200000000000000000001; productName = Markdown; };
+/* End XCSwiftPackageProductDependency section */
+
+	};
+	rootObject = F200000000000000000001;
+}
