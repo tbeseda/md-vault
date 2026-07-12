@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Test
+        run: |
+          xcodebuild -project md-vault.xcodeproj \
+            -scheme md-vault \
+            -derivedDataPath build \
+            test
+
+      - name: Build
+        run: |
+          xcodebuild -project md-vault.xcodeproj \
+            -scheme md-vault \
+            -configuration Release \
+            -derivedDataPath build \
+            build
+
+      - name: Package
+        run: |
+          cd build/Build/Products/Release
+          zip -r "$GITHUB_WORKSPACE/md-vault.zip" md-vault.app
+
+      - name: Compute SHA256
+        id: sha
+        run: echo "sha256=$(shasum -a 256 md-vault.zip | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+
+      - name: Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: md-vault.zip
+          generate_release_notes: true
+          append_body: true
+          body: |
+            **SHA256:** `${{ steps.sha.outputs.sha256 }}`
+
+      - name: Update Homebrew tap
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SHA256="${{ steps.sha.outputs.sha256 }}"
+
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/tbeseda/homebrew-tap.git" tap
+          cd tap
+
+          sed -i '' "s/version \".*\"/version \"${VERSION}\"/" Casks/md-vault.rb
+          sed -i '' "s/sha256 \".*\"/sha256 \"${SHA256}\"/" Casks/md-vault.rb
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/md-vault.rb
+          git diff --cached --quiet || (git commit -m "Update md-vault to ${VERSION}" && git push)
