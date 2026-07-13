@@ -12,7 +12,9 @@ struct FileTreeRowView: View {
             TextField("Name", text: $draftName)
                 .focused($nameFieldFocused)
                 .onAppear {
-                    draftName = item.name
+                    // Prefill the basename; AppState.rename restores the old
+                    // extension when the submitted name doesn't include one.
+                    draftName = item.isDirectory ? item.name : item.url.deletingPathExtension().lastPathComponent
                     nameFieldFocused = true
                 }
                 .onSubmit { appState.rename(item, to: draftName) }

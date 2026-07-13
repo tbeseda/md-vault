@@ -3,13 +3,14 @@ import SwiftUI
 struct ContentView: View {
     @Environment(AppState.self) private var appState
     @AppStorage("editorFontSize") private var editorFontSize = 14.0
+    @State private var columnVisibility = NavigationSplitViewVisibility.all
 
     var body: some View {
         if appState.vaultURL == nil {
             VaultPickerView()
         } else {
-            NavigationSplitView {
-                SidebarView()
+            NavigationSplitView(columnVisibility: $columnVisibility) {
+                SidebarView(sidebarCollapsed: columnVisibility == .detailOnly)
                     .navigationSplitViewColumnWidth(min: 180, ideal: 220)
             } detail: {
                 if let document = appState.openDocument {

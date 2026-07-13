@@ -17,12 +17,11 @@ struct EditorView: View {
                         keepMine: { document.keepMine() }
                     )
                 } else if let message = document.saveErrorMessage {
-                    Label(message, systemImage: "exclamationmark.triangle")
-                        .padding(8)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.bar)
+                    InlineErrorBannerView(message: message) { document.dismissSaveError() }
                 }
             }
+            .safeAreaPadding(12)
+            .scrollEdgeEffectStyle(.soft, for: .top)
             .onChange(of: document.text) {
                 // Attribute-only changes (our own restyle) leave the character
                 // content identical to plainText; only real edits pass.

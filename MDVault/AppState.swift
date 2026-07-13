@@ -57,6 +57,18 @@ final class AppState {
         rescanTree()
     }
 
+    /// Forget the chosen vault and return to the welcome screen.
+    func closeVault() {
+        openDocument?.save()
+        UserDefaults.standard.removeObject(forKey: "vaultPath")
+        vaultURL = nil
+        tree = []
+        selectedFileURL = nil
+        openDocument = nil
+        openError = nil
+        fileOpErrorMessage = nil
+    }
+
     /// Rebuild the whole tree from disk. The single code path for every
     /// mutation, local or external; vaults are small and rescans are cheap.
     func rescanTree() {
@@ -160,7 +172,12 @@ final class AppState {
 
     func rename(_ item: VaultItem, to newName: String) {
         defer { renamingItemURL = nil }
-        let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        var trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        // The rename field prefills the basename; a name typed without an
+        // extension keeps the old one (type a dot to change it, Finder-style).
+        if !item.isDirectory, !trimmed.contains("."), !item.url.pathExtension.isEmpty {
+            trimmed += "." + item.url.pathExtension
+        }
         guard !trimmed.isEmpty, trimmed != item.name, !trimmed.contains("/") else { return }
         let destination = item.url.deletingLastPathComponent().appending(path: trimmed).standardizedFileURL
         guard !FileManager.default.fileExists(atPath: destination.path(percentEncoded: false)) else {
@@ -226,6 +243,10 @@ final class AppState {
         }
         if moved { rescanTree() }
         return moved
+    }
+
+    func dismissFileOpError() {
+        fileOpErrorMessage = nil
     }
 
     /// Map a URL affected by a move (the item itself or a descendant) to its

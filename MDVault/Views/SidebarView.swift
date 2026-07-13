@@ -4,6 +4,8 @@ import SwiftUI
 /// selectable (folders disclose, other files are visible but inert).
 struct SidebarView: View {
     @Environment(AppState.self) private var appState
+    /// Whether the sidebar column is collapsed to detail-only.
+    let sidebarCollapsed: Bool
 
     var body: some View {
         @Bindable var appState = appState
@@ -31,6 +33,14 @@ struct SidebarView: View {
                 appState.trash(url)
             }
         }
+        .onKeyPress(.return) {
+            // Finder-style: Return renames the selected file. Ancestor key
+            // handlers run before the focused view, so while a rename field
+            // is open this must .ignore for Return to reach its onSubmit.
+            guard appState.renamingItemURL == nil, let url = appState.selectedFileURL else { return .ignored }
+            appState.renamingItemURL = url
+            return .handled
+        }
         .dropDestination(for: URL.self) { urls, _ in
             // Drops on empty list area target the vault root.
             guard let root = appState.vaultURL else { return false }
@@ -38,14 +48,14 @@ struct SidebarView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if let message = appState.fileOpErrorMessage {
-                Label(message, systemImage: "exclamationmark.triangle")
-                    .padding(8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.bar)
+                InlineErrorBannerView(message: message) { appState.dismissFileOpError() }
             }
         }
         .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
+            // In the sidebar header normally; while the sidebar is collapsed
+            // its section overflows to a chevron at the window's far right,
+            // so re-home the button beside the toggle instead.
+            ToolbarItemGroup(placement: sidebarCollapsed ? .navigation : .primaryAction) {
                 Button {
                     appState.newFileRelativeToSelection()
                 } label: {

@@ -44,6 +44,8 @@ Application state lives in a single `AppState` object (`@Observable` + `.environ
 
 If a feature requires deeper AppKit integration, reconsider whether it's needed.
 
+Known framework limits (macOS 26.5, verified): the AttributedString `TextEditor` ignores "Check Spelling While Typing" (the toggle never latches), and there is no SwiftUI spell-checking API. `TextEditingCommands()` is in the app commands because its Find & Replace bar works; do not add an NSTextView escape hatch just for spelling. It also ignores `contentMargins`; inset the text with `safeAreaPadding` instead.
+
 **Swift 6 strict concurrency.** Model types conform to `Sendable`. Build and test in Release mode before pushing; it is stricter than Debug for concurrency.
 
 **One dependency.** Apple's swift-markdown (the `Markdown` product), for parsing only. No other packages.

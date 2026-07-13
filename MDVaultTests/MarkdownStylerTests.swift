@@ -38,6 +38,12 @@ struct MarkdownStylerTests {
         #expect(ranges(source, .syntaxMarker) == [0..<2, 7..<8, 10..<11, 15..<17])
     }
 
+    @Test func strikethroughWithDelimiterMarkers() {
+        let source = "a ~~gone~~ z"
+        #expect(ranges(source, .strikethrough) == [2..<10])
+        #expect(ranges(source, .syntaxMarker) == [2..<4, 8..<10])
+    }
+
     @Test func inlineCodeBacktickMarkers() {
         let source = "x `code` y"
         #expect(ranges(source, .inlineCode) == [2..<8])

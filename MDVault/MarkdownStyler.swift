@@ -16,6 +16,7 @@ enum MarkdownStyler {
         case heading(level: Int)
         case strong
         case emphasis
+        case strikethrough
         case inlineCode
         case codeBlock
         case link
@@ -123,6 +124,9 @@ enum MarkdownStyler {
         case .emphasis:
             let weight: Font.Weight = (context.headingLevel != nil || context.inStrong) ? .bold : .regular
             c.font = .system(size: size, weight: weight).italic()
+        case .strikethrough:
+            c.strikethroughStyle = .single
+            c.foregroundColor = .secondary
         case .inlineCode:
             c.font = .system(size: max(size - 1, 4), design: .monospaced)
             c.backgroundColor = Color.gray.opacity(0.15)
@@ -187,6 +191,14 @@ private struct RunWalker: MarkupWalker {
             appendGapMarkers(for: emphasis, in: range)
         }
         descendInto(emphasis)
+    }
+
+    mutating func visitStrikethrough(_ strikethrough: Strikethrough) {
+        if let range = utf8Range(of: strikethrough) {
+            runs.append(.init(utf8Range: range, style: .strikethrough))
+            appendGapMarkers(for: strikethrough, in: range)
+        }
+        descendInto(strikethrough)
     }
 
     mutating func visitLink(_ link: Markdown.Link) {

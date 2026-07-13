@@ -11,6 +11,9 @@ struct MDVaultApp: App {
         }
         .defaultSize(width: 1100, height: 800)
         .commands {
+            // Adds the standard Find and Spelling/Substitutions menus, which
+            // SwiftUI's default Edit menu omits on macOS.
+            TextEditingCommands()
             CommandGroup(replacing: .newItem) {
                 Button("New File") { appState.newFileRelativeToSelection() }
                     .keyboardShortcut("n", modifiers: .command)
@@ -18,6 +21,8 @@ struct MDVaultApp: App {
                 Divider()
                 Button("Open Vault…") { appState.chooseVault() }
                     .keyboardShortcut("o", modifiers: [.command, .shift])
+                Button("Close Vault") { appState.closeVault() }
+                    .disabled(appState.vaultURL == nil)
                 Divider()
                 Button("Move to Trash") {
                     if let url = appState.selectedFileURL { appState.trash(url) }

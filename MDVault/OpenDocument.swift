@@ -110,6 +110,10 @@ final class OpenDocument {
         url = newURL
     }
 
+    func dismissSaveError() {
+        saveErrorMessage = nil
+    }
+
     private func write() {
         do {
             try Data(plainText.utf8).write(to: url, options: .atomic)
