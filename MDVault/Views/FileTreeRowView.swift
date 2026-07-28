@@ -12,15 +12,12 @@ struct FileTreeRowView: View {
             TextField("Name", text: $draftName)
                 .focused($nameFieldFocused)
                 .onAppear {
-                    // Prefill the basename; AppState.rename restores the old
-                    // extension when the submitted name doesn't include one.
                     draftName = item.isDirectory ? item.name : item.url.deletingPathExtension().lastPathComponent
                     nameFieldFocused = true
                 }
                 .onSubmit { appState.rename(item, to: draftName) }
                 .onExitCommand { appState.renamingItemURL = nil }
                 .onChange(of: nameFieldFocused) {
-                    // Losing focus without submitting cancels, like Escape.
                     if !nameFieldFocused, appState.renamingItemURL == item.url {
                         appState.renamingItemURL = nil
                     }
@@ -32,8 +29,6 @@ struct FileTreeRowView: View {
                 .contentShape(Rectangle())
                 .draggable(item.url)
                 .dropDestination(for: URL.self) { urls, _ in
-                    // A drop on a folder moves into it; a drop on a file
-                    // moves to the file's level, like Finder's list view.
                     appState.move(urls, into: item.isDirectory ? item.url : item.url.deletingLastPathComponent())
                 } isTargeted: { targeted in
                     isDropTargeted = targeted && item.isDirectory

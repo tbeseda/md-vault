@@ -1,6 +1,5 @@
 import SwiftUI
 
-/// Single source of truth for the app: the open vault, its file tree, and the open document.
 @MainActor @Observable
 final class AppState {
     private(set) var vaultURL: URL?
@@ -10,30 +9,29 @@ final class AppState {
     private(set) var openError: String?
     var renamingItemURL: URL?
     private(set) var fileOpErrorMessage: String?
+    private let defaults: UserDefaults
 
-    init() {
-        if let path = UserDefaults.standard.string(forKey: "vaultPath") {
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        if let path = defaults.string(forKey: "vaultPath") {
             var isDirectory: ObjCBool = false
             if FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), isDirectory.boolValue {
                 openVault(at: URL(filePath: path, directoryHint: .isDirectory))
             }
         }
-        // SwiftUI has no reliable scene-teardown hook on macOS; flush the
-        // buffer on quit via AppKit's notification (sanctioned escape hatch).
+        // SwiftUI has no scene-teardown hook for flushing the buffer on quit.
         NotificationCenter.default.addObserver(
             forName: NSApplication.willTerminateNotification, object: nil, queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
-                self?.openDocument?.save()
+                _ = self?.openDocument?.save()
             }
         }
     }
 
     // MARK: - Vault
 
-    /// Present the vault chooser. NSOpenPanel is a sanctioned escape hatch:
-    /// fileImporter cannot guarantee directory creation, and creating a new
-    /// vault folder from the panel is a core flow.
+    // fileImporter cannot create a directory from the picker.
     func chooseVault() {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
@@ -48,19 +46,18 @@ final class AppState {
     }
 
     func openVault(at url: URL) {
-        openDocument?.save()
+        guard saveOpenDocumentBeforeClosing() else { return }
         vaultURL = url.standardizedFileURL
-        UserDefaults.standard.set(url.path(percentEncoded: false), forKey: "vaultPath")
+        defaults.set(url.path(percentEncoded: false), forKey: "vaultPath")
         selectedFileURL = nil
         openDocument = nil
         openError = nil
         rescanTree()
     }
 
-    /// Forget the chosen vault and return to the welcome screen.
     func closeVault() {
-        openDocument?.save()
-        UserDefaults.standard.removeObject(forKey: "vaultPath")
+        guard saveOpenDocumentBeforeClosing() else { return }
+        defaults.removeObject(forKey: "vaultPath")
         vaultURL = nil
         tree = []
         selectedFileURL = nil
@@ -69,8 +66,6 @@ final class AppState {
         fileOpErrorMessage = nil
     }
 
-    /// Rebuild the whole tree from disk. The single code path for every
-    /// mutation, local or external; vaults are small and rescans are cheap.
     func rescanTree() {
         guard let vaultURL else {
             tree = []
@@ -78,8 +73,12 @@ final class AppState {
         }
         tree = VaultItem.buildTree(at: vaultURL)
         if let selectedFileURL, !contains(selectedFileURL) {
-            self.selectedFileURL = nil
-            openDocument = nil
+            if let openDocument, openDocument.isDirty {
+                openDocument.conflict = .deleted
+            } else {
+                self.selectedFileURL = nil
+                openDocument = nil
+            }
         }
     }
 
@@ -94,13 +93,13 @@ final class AppState {
 
     func openSelectedFile(fontSize: CGFloat) {
         guard let url = selectedFileURL else {
-            openDocument?.save()
+            guard saveOpenDocumentBeforeClosing() else { return }
             openDocument = nil
             openError = nil
             return
         }
         guard url != openDocument?.url else { return }
-        openDocument?.save()
+        guard saveOpenDocumentBeforeClosing() else { return }
         do {
             let source = try String(contentsOf: url, encoding: .utf8)
             openDocument = OpenDocument(url: url, source: source, fontSize: fontSize)
@@ -111,11 +110,14 @@ final class AppState {
         }
     }
 
+    func discardOpenDocument() {
+        selectedFileURL = nil
+        openDocument = nil
+        openError = nil
+    }
+
     // MARK: - External changes
 
-    /// Handle a batch of FSEvents. The tree rescan is idempotent, so our own
-    /// saves need no suppression there; for the open document, echo
-    /// suppression is content comparison in `ExternalChange.determine`.
     func handleExternalChanges(fontSize: CGFloat) {
         rescanTree()
         guard let document = openDocument,
@@ -132,7 +134,7 @@ final class AppState {
         case .adopt:
             document.adoptDiskContent(diskContent)
         case .conflict:
-            document.conflict = true
+            document.conflict = .modified
         }
     }
 
@@ -142,9 +144,9 @@ final class AppState {
         createFile(in: selectedFileURL?.deletingLastPathComponent())
     }
 
-    /// Create a deduped Untitled.md, select it, and enter rename mode.
     func createFile(in directory: URL?) {
         guard let parent = directory ?? vaultURL else { return }
+        guard saveOpenDocumentBeforeClosing() else { return }
         let url = availableURL(in: parent, baseName: "Untitled", fileExtension: "md")
         do {
             try Data().write(to: url)
@@ -173,8 +175,6 @@ final class AppState {
     func rename(_ item: VaultItem, to newName: String) {
         defer { renamingItemURL = nil }
         var trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
-        // The rename field prefills the basename; a name typed without an
-        // extension keeps the old one (type a dot to change it, Finder-style).
         if !item.isDirectory, !trimmed.contains("."), !item.url.pathExtension.isEmpty {
             trimmed += "." + item.url.pathExtension
         }
@@ -199,14 +199,14 @@ final class AppState {
         }
     }
 
-    /// Move a file or folder to the Trash. Recoverable via Finder, so no
-    /// confirmation, matching Finder's own behavior. If the open document was
-    /// the item or inside it, the rescan drops it (same path as an external
-    /// delete), which also cancels any pending autosave that would otherwise
-    /// re-create the file.
     func trash(_ url: URL) {
         do {
             try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+            if Self.contains(openDocument?.url, in: url) {
+                selectedFileURL = nil
+                openDocument = nil
+                openError = nil
+            }
             rescanTree()
             fileOpErrorMessage = nil
         } catch {
@@ -214,8 +214,6 @@ final class AppState {
         }
     }
 
-    /// Move dragged items into a folder. Drops that would be no-ops or leave
-    /// the vault are ignored by the planner; name collisions surface as errors.
     @discardableResult
     func move(_ sources: [URL], into directory: URL) -> Bool {
         guard let vaultURL else { return false }
@@ -249,8 +247,6 @@ final class AppState {
         fileOpErrorMessage = nil
     }
 
-    /// Map a URL affected by a move (the item itself or a descendant) to its
-    /// new location; nil if unaffected.
     private static func adjustURL(_ url: URL?, from oldURL: URL, to newURL: URL) -> URL? {
         guard let url else { return nil }
         let path = url.path(percentEncoded: false)
@@ -260,6 +256,22 @@ final class AppState {
             return URL(filePath: newURL.path(percentEncoded: false) + path.dropFirst(oldPath.count))
         }
         return nil
+    }
+
+    private static func contains(_ url: URL?, in itemURL: URL) -> Bool {
+        guard let url else { return false }
+        let path = url.path(percentEncoded: false)
+        let itemPath = itemURL.path(percentEncoded: false)
+        return path == itemPath || path.hasPrefix(itemPath + "/")
+    }
+
+    private func saveOpenDocumentBeforeClosing() -> Bool {
+        guard let openDocument else { return true }
+        guard openDocument.save() else {
+            selectedFileURL = openDocument.url
+            return false
+        }
+        return true
     }
 
     private func availableURL(in parent: URL, baseName: String, fileExtension: String?) -> URL {

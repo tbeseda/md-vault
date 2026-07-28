@@ -1,12 +1,7 @@
 import CoreServices
 import Foundation
 
-/// Recursive FSEvents watcher for the vault directory, exposed as an
-/// AsyncStream of change batches (coalesced by FSEvents latency).
-///
-/// One of the few sanctioned non-SwiftUI escape hatches: FSEvents is the OS
-/// facility for recursive directory watching; DispatchSource would need a
-/// file descriptor per folder with churn on every mkdir.
+// FSEvents provides recursive watching without one file descriptor per folder.
 @MainActor
 final class VaultWatcher {
     let events: AsyncStream<[String]>
@@ -14,7 +9,6 @@ final class VaultWatcher {
     private let stream: FSEventStreamRef?
     private let queue = DispatchQueue(label: "com.tbeseda.md-vault.watcher")
 
-    /// The C callbacks touch only this Sendable box, never the watcher.
     fileprivate final class ContinuationBox: Sendable {
         let continuation: AsyncStream<[String]>.Continuation
         init(_ continuation: AsyncStream<[String]>.Continuation) { self.continuation = continuation }
@@ -55,10 +49,7 @@ final class VaultWatcher {
     }
 }
 
-// The FSEvents callbacks run on the watcher's private dispatch queue. They
-// must be file-scope functions: a closure literal defined inside the
-// @MainActor class would inherit main-actor isolation and trap the runtime's
-// isolation check when FSEvents invokes it off the main thread.
+// File-scope callbacks avoid inheriting the watcher's main-actor isolation.
 
 private func handleWatcherEvents(
     _ stream: ConstFSEventStreamRef,

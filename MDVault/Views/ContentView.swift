@@ -27,9 +27,6 @@ struct ContentView: View {
                 appState.openSelectedFile(fontSize: editorFontSize)
             }
             .task(id: appState.vaultURL) {
-                // Watch the vault for external changes (agents, editors).
-                // The watcher lives and dies with this task; switching vaults
-                // restarts it via the id.
                 guard let vaultURL = appState.vaultURL else { return }
                 let watcher = VaultWatcher(vaultURL: vaultURL)
                 defer { watcher.stop() }

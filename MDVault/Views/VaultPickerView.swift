@@ -1,6 +1,5 @@
 import SwiftUI
 
-/// Welcome screen shown until a vault is open.
 struct VaultPickerView: View {
     @Environment(AppState.self) private var appState
 

@@ -1,7 +1,6 @@
 import Testing
 @testable import MDVault
 
-/// The full decision matrix for external changes to the open file.
 struct ExternalChangeTests {
     @Test func untouchedDiskWithCleanBufferIsEcho() {
         #expect(ExternalChange.determine(diskContent: "a", lastSavedText: "a", bufferText: "a") == .ignoreEcho)

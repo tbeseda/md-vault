@@ -1,19 +1,18 @@
 import SwiftUI
 
-/// Editor state for a single open markdown file.
-///
-/// `text` is the TextEditor binding; its characters are always the raw markdown
-/// source. `plainText` caches `String(text.characters)` and is the single
-/// mechanism for both re-entrancy guarding (attribute-only restyles leave it
-/// untouched) and dirty detection (compare against `lastSavedText`).
 @MainActor @Observable
 final class OpenDocument {
+    enum Conflict: Equatable, Sendable {
+        case modified
+        case deleted
+    }
+
     private(set) var url: URL
     var text: AttributedString
     var selection = AttributedTextSelection()
     private(set) var plainText: String
     private(set) var lastSavedText: String
-    var conflict = false
+    var conflict: Conflict?
     private(set) var editGeneration = 0
     private(set) var saveErrorMessage: String?
 
@@ -29,20 +28,13 @@ final class OpenDocument {
 
     // MARK: - Editing
 
-    /// Record a real (character) edit detected by the editor's onChange guard.
     func noteEdit(_ newPlainText: String) {
         plainText = newPlainText
         editGeneration += 1
     }
 
-    /// Re-derive styling from the current source. Attribute-only mutation:
-    /// character content is untouched, so character offsets stay valid.
-    ///
-    /// The selection is captured as character offsets and rebuilt afterward.
-    /// `transform(updating:)` is supposed to remap the selection across the
-    /// mutation, but on macOS 26.5 a mid-document insertion point ends up at
-    /// the end of the document after a whole-string setAttributes, so we
-    /// re-derive it ourselves (verified via the M1 accessibility harness).
+    // transform(updating:) moves a mid-document insertion point to the end
+    // after whole-string setAttributes on macOS 26.5.
     func restyle(fontSize: CGFloat) {
         let runs = MarkdownStyler.runs(for: plainText)
         let captured = capturedSelectionOffsets()
@@ -52,60 +44,65 @@ final class OpenDocument {
 
     // MARK: - Disk
 
-    /// Autosave and save-on-switch path. Refuses to clobber an unprocessed
-    /// external write; that becomes a conflict instead.
-    func save() {
-        guard isDirty else { return }
-        if let diskContent = try? String(contentsOf: url, encoding: .utf8), diskContent != lastSavedText {
+    @discardableResult
+    func save() -> Bool {
+        guard isDirty else { return true }
+
+        let diskContent: String
+        do {
+            diskContent = try String(contentsOf: url, encoding: .utf8)
+        } catch {
+            if FileManager.default.fileExists(atPath: url.path(percentEncoded: false)) {
+                saveErrorMessage = "Could not read \(fileName) before saving: \(error.localizedDescription)"
+            } else {
+                conflict = .deleted
+            }
+            return false
+        }
+
+        if diskContent != lastSavedText {
             if diskContent == plainText {
                 adoptDiskContent(diskContent)
+                return true
             } else {
-                conflict = true
+                conflict = .modified
+                return false
             }
-            return
         }
-        write()
+        return write()
     }
 
-    /// Explicit Cmd-S. During a conflict this is the deliberate overwrite.
     func saveCommand() {
-        if conflict {
+        if conflict != nil {
             keepMine()
         } else {
             save()
         }
     }
 
-    /// Resolve a conflict in favor of the buffer: overwrite the file now.
     func keepMine() {
-        conflict = false
+        conflict = nil
         write()
     }
 
-    /// Resolve a conflict by discarding the buffer for the disk content.
     func reloadFromDisk(fontSize: CGFloat) {
         guard let source = try? String(contentsOf: url, encoding: .utf8) else { return }
         reload(source: source, fontSize: fontSize)
     }
 
-    /// Replace the buffer with new disk content. Whole-string replacement;
-    /// the selection reset is correct because the content changed under us.
     func reload(source: String, fontSize: CGFloat) {
         plainText = source
         lastSavedText = source
-        conflict = false
+        conflict = nil
         text = MarkdownStyler.styledText(source, fontSize: fontSize)
         selection = AttributedTextSelection()
     }
 
-    /// An external write landed with exactly the buffer's content; nothing
-    /// changes on screen, the buffer is simply clean now.
     func adoptDiskContent(_ diskContent: String) {
         lastSavedText = diskContent
-        conflict = false
+        conflict = nil
     }
 
-    /// The file moved (a rename of it or of an ancestor folder).
     func relocate(to newURL: URL) {
         url = newURL
     }
@@ -114,13 +111,16 @@ final class OpenDocument {
         saveErrorMessage = nil
     }
 
-    private func write() {
+    @discardableResult
+    private func write() -> Bool {
         do {
             try Data(plainText.utf8).write(to: url, options: .atomic)
             lastSavedText = plainText
             saveErrorMessage = nil
+            return true
         } catch {
             saveErrorMessage = "Could not save \(fileName): \(error.localizedDescription)"
+            return false
         }
     }
 

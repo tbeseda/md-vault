@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// The one shape for transient error messages (file ops, save failures):
-/// an inline bar with a dismiss button, shown via safeAreaInset.
 struct InlineErrorBannerView: View {
     let message: String
     let dismiss: () -> Void
@@ -21,20 +19,33 @@ struct InlineErrorBannerView: View {
     }
 }
 
-/// Shown when the open file changed on disk under unsaved edits.
 struct ConflictBannerView: View {
     let fileName: String
+    let conflict: OpenDocument.Conflict
     let reload: () -> Void
     let keepMine: () -> Void
+    let discard: () -> Void
 
     var body: some View {
         HStack {
-            Label("\(fileName) changed on disk", systemImage: "exclamationmark.triangle.fill")
+            Label(message, systemImage: "exclamationmark.triangle.fill")
             Spacer()
-            Button("Reload", action: reload)
-            Button("Keep Mine", action: keepMine)
+            if conflict == .deleted {
+                Button("Close", action: discard)
+                Button("Recreate", action: keepMine)
+            } else {
+                Button("Reload", action: reload)
+                Button("Keep Mine", action: keepMine)
+            }
         }
         .padding(8)
         .background(.bar)
+    }
+
+    private var message: String {
+        switch conflict {
+        case .modified: "\(fileName) changed on disk"
+        case .deleted: "\(fileName) was deleted"
+        }
     }
 }

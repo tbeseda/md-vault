@@ -1,10 +1,7 @@
 import SwiftUI
 
-/// The vault file tree. Selection is by file URL; only markdown files are
-/// selectable (folders disclose, other files are visible but inert).
 struct SidebarView: View {
     @Environment(AppState.self) private var appState
-    /// Whether the sidebar column is collapsed to detail-only.
     let sidebarCollapsed: Bool
 
     var body: some View {
@@ -34,15 +31,12 @@ struct SidebarView: View {
             }
         }
         .onKeyPress(.return) {
-            // Finder-style: Return renames the selected file. Ancestor key
-            // handlers run before the focused view, so while a rename field
-            // is open this must .ignore for Return to reach its onSubmit.
+            // Let Return reach the rename field when it is open.
             guard appState.renamingItemURL == nil, let url = appState.selectedFileURL else { return .ignored }
             appState.renamingItemURL = url
             return .handled
         }
         .dropDestination(for: URL.self) { urls, _ in
-            // Drops on empty list area target the vault root.
             guard let root = appState.vaultURL else { return false }
             return appState.move(urls, into: root)
         }
@@ -52,9 +46,7 @@ struct SidebarView: View {
             }
         }
         .toolbar {
-            // In the sidebar header normally; while the sidebar is collapsed
-            // its section overflows to a chevron at the window's far right,
-            // so re-home the button beside the toggle instead.
+            // Keep the action beside the sidebar toggle when collapsed.
             ToolbarItemGroup(placement: sidebarCollapsed ? .navigation : .primaryAction) {
                 Button {
                     appState.newFileRelativeToSelection()

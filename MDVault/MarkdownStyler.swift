@@ -1,11 +1,7 @@
 import Markdown
 import SwiftUI
 
-/// Overlays presentation attributes on raw markdown source.
-///
-/// The styled text's characters are always identical to the source string;
-/// only attributes differ. `runs(for:)` is a pure function over the source
-/// and the primary unit-test surface.
+// Styling changes attributes only; characters always remain the raw source.
 enum MarkdownStyler {
     struct StyleRun: Equatable, Sendable {
         let utf8Range: Range<Int>
@@ -28,7 +24,6 @@ enum MarkdownStyler {
 
     // MARK: - Run generation
 
-    /// Parse the source and emit attribute runs keyed by UTF-8 offset ranges.
     static func runs(for source: String) -> [StyleRun] {
         var walker = RunWalker(source: source)
         walker.visit(Document(parsing: source))
@@ -37,17 +32,13 @@ enum MarkdownStyler {
 
     // MARK: - Attribute application
 
-    /// Build a styled AttributedString from scratch. Only for open/reload,
-    /// where a selection reset is correct; while editing, use `applyRuns`
-    /// so `OpenDocument.restyle` can preserve the selection.
+    // Whole-string construction is reserved for open and reload.
     static func styledText(_ source: String, fontSize: CGFloat) -> AttributedString {
         var text = AttributedString(source)
         applyRuns(runs(for: source), to: &text, fontSize: fontSize)
         return text
     }
 
-    /// Reset the whole string to base attributes, then overlay the runs.
-    /// Attribute-only: never inserts or removes characters.
     static func applyRuns(_ runs: [StyleRun], to text: inout AttributedString, fontSize: CGFloat) {
         var base = AttributeContainer()
         base.font = .system(size: fontSize)
@@ -98,9 +89,7 @@ enum MarkdownStyler {
 
     private static let headingScales: [CGFloat] = [1.6, 1.4, 1.25, 1.15, 1.05, 1.0]
 
-    /// Ambient formatting at a run's position. SwiftUI `Font` attributes
-    /// replace rather than merge, so nested inline styles (bold inside a
-    /// heading, emphasis inside strong) must resolve to a single font here.
+    // Font attributes replace rather than merge, so nested styles resolve here.
     private struct FontContext {
         var headingLevel: Int?
         var inStrong: Bool
@@ -148,11 +137,7 @@ enum MarkdownStyler {
 
 // MARK: - Walker
 
-/// Walks the swift-markdown AST emitting style runs. Node `SourceRange`s are
-/// 1-based line/column pairs with UTF-8-byte columns (cmark-gfm semantics);
-/// a line-offset table converts them to flat UTF-8 offsets. Nodes without
-/// ranges are skipped; all offsets are clamped, so a surprising range renders
-/// unstyled rather than crashing.
+// SourceRange columns are one-based UTF-8 byte offsets.
 private struct RunWalker: MarkupWalker {
     var runs: [MarkdownStyler.StyleRun] = []
     private let bytes: [UInt8]
@@ -212,7 +197,6 @@ private struct RunWalker: MarkupWalker {
     mutating func visitInlineCode(_ inlineCode: InlineCode) {
         guard let range = utf8Range(of: inlineCode) else { return }
         runs.append(.init(utf8Range: range, style: .inlineCode))
-        // No ranged children: derive the backtick delimiters by scanning.
         var lead = range.lowerBound
         while lead < range.upperBound, bytes[lead] == UInt8(ascii: "`") { lead += 1 }
         var trail = range.upperBound
@@ -256,8 +240,7 @@ private struct RunWalker: MarkupWalker {
 
     // MARK: Marker derivation
 
-    /// Delimiters of container nodes (`**`, `*`, `[`, `](url)`, `# `) are the
-    /// gaps between the node's range and the union of its children's ranges.
+    // Container delimiters are the gaps around their child ranges.
     private mutating func appendGapMarkers(for markup: Markup, in range: Range<Int>) {
         let childRanges = markup.children
             .compactMap { utf8Range(of: $0) }
@@ -275,8 +258,6 @@ private struct RunWalker: MarkupWalker {
         }
     }
 
-    /// The `>` repeats on every quoted line and children's ranges exclude it,
-    /// so scan each line in the quote for its leading marker.
     private mutating func appendQuoteMarkers(in range: Range<Int>) {
         for lineStart in lineStarts[lineIndex(containing: range.lowerBound)...] {
             guard lineStart < range.upperBound else { break }

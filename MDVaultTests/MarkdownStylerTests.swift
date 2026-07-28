@@ -10,8 +10,6 @@ struct MarkdownStylerTests {
             .sorted { $0.lowerBound < $1.lowerBound }
     }
 
-    // MARK: Per-node runs and markers
-
     @Test(arguments: 1...6)
     func headingLevelAndMarker(level: Int) {
         let source = String(repeating: "#", count: level) + " Title"
@@ -82,8 +80,6 @@ struct MarkdownStylerTests {
         #expect(ranges(source, .thematicBreak) == [0..<3])
     }
 
-    // MARK: Offset semantics
-
     @Test func multibytePrefixPinsUTF8Columns() {
         // "héllo 🎉 " is 12 UTF-8 bytes; if swift-markdown columns were
         // character- or scalar-oriented these ranges would be wrong.
@@ -91,8 +87,6 @@ struct MarkdownStylerTests {
         #expect(ranges(source, .strong) == [12..<20])
         #expect(ranges(source, .syntaxMarker) == [12..<14, 18..<20])
     }
-
-    // MARK: Edge cases
 
     @Test func emptySourceProducesNoRuns() {
         #expect(MarkdownStyler.runs(for: "").isEmpty)
@@ -143,8 +137,6 @@ struct MarkdownStylerTests {
             #expect(run.utf8Range.lowerBound <= run.utf8Range.upperBound)
         }
     }
-
-    // MARK: Application invariants
 
     @Test func styledTextPreservesCharacters() {
         let source = "# Hi\n**bold** and `code` plus 🎉"

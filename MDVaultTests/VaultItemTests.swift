@@ -36,8 +36,6 @@ struct VaultItemTests {
         #expect(VaultItem.buildTree(at: bogus).isEmpty)
     }
 
-    // MARK: - moveDestination (pure planning; no filesystem)
-
     private let vault = URL(filePath: "/tmp/vault")
 
     private func plan(_ source: String, into directory: String) -> String? {
