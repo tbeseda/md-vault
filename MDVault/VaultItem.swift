@@ -47,6 +47,21 @@ struct VaultItem: Identifiable, Hashable, Sendable {
         return path.count > 1 && path.hasSuffix("/") ? String(path.dropLast()) : path
     }
 
+    static func topLevelURLs(_ urls: some Sequence<URL>) -> [URL] {
+        let sorted = Set(urls.map(\.standardizedFileURL)).sorted {
+            let lhs = path(of: $0)
+            let rhs = path(of: $1)
+            return lhs.count != rhs.count ? lhs.count < rhs.count : lhs < rhs
+        }
+        return sorted.filter { candidate in
+            let candidatePath = path(of: candidate)
+            return !sorted.contains { other in
+                let otherPath = path(of: other)
+                return otherPath != candidatePath && candidatePath.hasPrefix(otherPath + "/")
+            }
+        }
+    }
+
     static func moveDestination(for source: URL, into directory: URL, vaultURL: URL) -> URL? {
         let sourcePath = path(of: source)
         let directoryPath = path(of: directory)
@@ -59,5 +74,19 @@ struct VaultItem: Identifiable, Hashable, Sendable {
         else { return nil }
         return URL(filePath: directoryPath, directoryHint: .isDirectory)
             .appending(path: source.lastPathComponent)
+    }
+
+    static func importDestination(for source: URL, into directory: URL, vaultURL: URL) -> URL? {
+        let sourcePath = path(of: source)
+        let directoryPath = path(of: directory)
+        let vaultPath = path(of: vaultURL)
+        guard directoryPath == vaultPath || directoryPath.hasPrefix(vaultPath + "/") else { return nil }
+
+        let destination = URL(filePath: directoryPath, directoryHint: .isDirectory)
+            .appending(path: source.lastPathComponent)
+            .standardizedFileURL
+        let destinationPath = path(of: destination)
+        guard destinationPath != sourcePath, !destinationPath.hasPrefix(sourcePath + "/") else { return nil }
+        return destination
     }
 }

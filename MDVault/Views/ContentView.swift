@@ -23,8 +23,8 @@ struct ContentView: View {
                     ContentUnavailableView("No File Selected", systemImage: "doc.text", description: Text("Choose a markdown file from the sidebar."))
                 }
             }
-            .onChange(of: appState.selectedFileURL) {
-                appState.openSelectedFile(fontSize: editorFontSize)
+            .onChange(of: appState.activeFileURL) {
+                appState.openActiveFile(fontSize: editorFontSize)
             }
             .task(id: appState.vaultURL) {
                 guard let vaultURL = appState.vaultURL else { return }

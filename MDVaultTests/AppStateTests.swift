@@ -12,10 +12,11 @@ struct AppStateTests {
         document.noteEdit("# local edit")
         try "# external edit".write(to: fixture.firstFile, atomically: true, encoding: .utf8)
 
-        fixture.state.selectedFileURL = fixture.secondFile
-        fixture.state.openSelectedFile(fontSize: 14)
+        fixture.state.activeFileURL = fixture.secondFile
+        fixture.state.openActiveFile(fontSize: 14)
 
-        #expect(fixture.state.selectedFileURL == fixture.firstFile)
+        #expect(fixture.state.activeFileURL == fixture.firstFile)
+        #expect(fixture.state.selectedItemURLs == [fixture.firstFile])
         #expect(fixture.state.openDocument === document)
         #expect(document.plainText == "# local edit")
         #expect(document.conflict == .modified)
@@ -31,7 +32,7 @@ struct AppStateTests {
 
         fixture.state.handleExternalChanges(fontSize: 14)
 
-        #expect(fixture.state.selectedFileURL == fixture.firstFile)
+        #expect(fixture.state.activeFileURL == fixture.firstFile)
         #expect(fixture.state.openDocument === document)
         #expect(document.plainText == "# local edit")
         #expect(document.conflict == .deleted)
@@ -60,8 +61,94 @@ struct AppStateTests {
 
         fixture.state.handleExternalChanges(fontSize: 14)
 
-        #expect(fixture.state.selectedFileURL == nil)
+        #expect(fixture.state.activeFileURL == nil)
         #expect(fixture.state.openDocument == nil)
+    }
+
+    @Test func selectingMarkdownFileActivatesIt() throws {
+        let fixture = try Fixture()
+        defer { fixture.remove() }
+        fixture.openFirstFile()
+
+        fixture.state.selectedItemURLs = [fixture.secondFile]
+        fixture.state.selectionDidChange()
+
+        #expect(fixture.state.activeFileURL == fixture.secondFile)
+    }
+
+    @Test func extendingSelectionKeepsActiveMarkdown() throws {
+        let fixture = try Fixture()
+        defer { fixture.remove() }
+        fixture.openFirstFile()
+
+        fixture.state.selectedItemURLs.insert(fixture.secondFile)
+        fixture.state.selectionDidChange()
+
+        #expect(fixture.state.activeFileURL == fixture.firstFile)
+    }
+
+    @Test func rangeSelectionKeepsActiveMarkdownWhenStillSelected() throws {
+        let fixture = try Fixture()
+        defer { fixture.remove() }
+        fixture.openFirstFile()
+
+        fixture.state.selectedItemURLs = [fixture.firstFile, fixture.secondFile]
+        fixture.state.selectionDidChange()
+
+        #expect(fixture.state.activeFileURL == fixture.firstFile)
+    }
+
+    @Test func selectingNonMarkdownItemKeepsDocumentOpen() throws {
+        let fixture = try Fixture()
+        defer { fixture.remove() }
+        fixture.openFirstFile()
+        let document = try #require(fixture.state.openDocument)
+        let asset = fixture.root.appending(path: "image.png")
+        try Data([0, 1, 2]).write(to: asset)
+        fixture.state.rescanTree()
+
+        fixture.state.selectedItemURLs = [asset]
+        fixture.state.selectionDidChange()
+
+        #expect(fixture.state.activeFileURL == fixture.firstFile)
+        #expect(fixture.state.openDocument === document)
+    }
+
+    @Test func internalDropMovesFile() throws {
+        let fixture = try Fixture()
+        defer { fixture.remove() }
+        let folder = fixture.root.appending(path: "archive", directoryHint: .isDirectory)
+        let destination = folder.appending(path: fixture.firstFile.lastPathComponent)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+        fixture.state.rescanTree()
+
+        #expect(fixture.state.receiveDrop([fixture.firstFile], into: folder))
+
+        #expect(!FileManager.default.fileExists(atPath: fixture.firstFile.path(percentEncoded: false)))
+        #expect(FileManager.default.fileExists(atPath: destination.path(percentEncoded: false)))
+        #expect(fixture.state.selectedItemURLs == [destination])
+    }
+
+    @Test func externalDropCopiesFileAndFolder() throws {
+        let fixture = try Fixture()
+        defer { fixture.remove() }
+        let sourceRoot = FileManager.default.temporaryDirectory
+            .appending(path: "drop-\(UUID().uuidString)", directoryHint: .isDirectory)
+        let file = sourceRoot.appending(path: "asset.txt")
+        let folder = sourceRoot.appending(path: "notes", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try "asset".write(to: file, atomically: true, encoding: .utf8)
+        try "# nested".write(to: folder.appending(path: "nested.md"), atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: sourceRoot) }
+
+        #expect(fixture.state.receiveDrop([file, folder], into: fixture.root))
+
+        #expect(try String(contentsOf: fixture.root.appending(path: "asset.txt"), encoding: .utf8) == "asset")
+        #expect(try String(contentsOf: fixture.root.appending(path: "notes/nested.md"), encoding: .utf8) == "# nested")
+        #expect(fixture.state.selectedItemURLs == [
+            fixture.root.appending(path: "asset.txt"),
+            fixture.root.appending(path: "notes")
+        ])
     }
 
     @MainActor
@@ -89,8 +176,9 @@ struct AppStateTests {
         }
 
         func openFirstFile() {
-            state.selectedFileURL = firstFile
-            state.openSelectedFile(fontSize: 14)
+            state.selectedItemURLs = [firstFile]
+            state.activeFileURL = firstFile
+            state.openActiveFile(fontSize: 14)
         }
 
         func remove() {

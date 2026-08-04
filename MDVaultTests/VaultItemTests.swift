@@ -88,4 +88,40 @@ struct VaultItemTests {
         )
         #expect(destination?.path(percentEncoded: false) == "/tmp/vault/other/dir")
     }
+
+    @Test func keepsOnlyTopLevelDraggedURLs() {
+        let urls = VaultItem.topLevelURLs([
+            URL(filePath: "/tmp/vault/folder/nested.md"),
+            URL(filePath: "/tmp/vault/other.md"),
+            URL(filePath: "/tmp/vault/folder")
+        ])
+
+        #expect(Set(urls.map(VaultItem.path)) == ["/tmp/vault/folder", "/tmp/vault/other.md"])
+    }
+
+    @Test func plansExternalImportIntoVault() {
+        let destination = VaultItem.importDestination(
+            for: URL(filePath: "/tmp/inbox/notes"),
+            into: URL(filePath: "/tmp/vault/reference"),
+            vaultURL: vault
+        )
+
+        #expect(destination?.path(percentEncoded: false) == "/tmp/vault/reference/notes")
+    }
+
+    @Test func rejectsImportIntoSourceDescendant() {
+        #expect(VaultItem.importDestination(
+            for: URL(filePath: "/tmp"),
+            into: URL(filePath: "/tmp/vault"),
+            vaultURL: vault
+        ) == nil)
+    }
+
+    @Test func rejectsImportTargetOutsideVault() {
+        #expect(VaultItem.importDestination(
+            for: URL(filePath: "/tmp/inbox/a.md"),
+            into: URL(filePath: "/tmp/elsewhere"),
+            vaultURL: vault
+        ) == nil)
+    }
 }

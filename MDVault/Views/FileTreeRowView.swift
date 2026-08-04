@@ -3,6 +3,7 @@ import SwiftUI
 struct FileTreeRowView: View {
     @Environment(AppState.self) private var appState
     let item: VaultItem
+    let dragNamespace: Namespace.ID
     @State private var draftName = ""
     @State private var isDropTargeted = false
     @FocusState private var nameFieldFocused: Bool
@@ -27,14 +28,39 @@ struct FileTreeRowView: View {
                 .foregroundStyle(item.isDirectory || item.isMarkdown ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
-                .draggable(item.url)
+                .draggable(containerItemID: item.url, containerNamespace: dragNamespace)
                 .dropDestination(for: URL.self) { urls, _ in
-                    appState.move(urls, into: item.isDirectory ? item.url : item.url.deletingLastPathComponent())
+                    appState.receiveDrop(urls, into: item.isDirectory ? item.url : item.url.deletingLastPathComponent())
                 } isTargeted: { targeted in
-                    isDropTargeted = targeted && item.isDirectory
+                    isDropTargeted = targeted
+                }
+                .dropConfiguration { session in
+                    .init(operation: session.localSession == nil ? .copy : .move)
                 }
                 .background(.tint.opacity(isDropTargeted ? 0.2 : 0), in: RoundedRectangle(cornerRadius: 4))
+                .simultaneousGesture(selectionGesture)
         }
+    }
+
+    private var selectionGesture: some Gesture {
+        let shiftClick = TapGesture()
+            .modifiers(.shift)
+            .onEnded { appState.selectedItemURLs.insert(item.url) }
+        let commandClick = TapGesture()
+            .modifiers(.command)
+            .onEnded {
+                if appState.selectedItemURLs.contains(item.url) {
+                    appState.selectedItemURLs.remove(item.url)
+                } else {
+                    appState.selectedItemURLs.insert(item.url)
+                }
+            }
+        let plainClick = TapGesture()
+            .modifiers([])
+            .onEnded { appState.selectedItemURLs = [item.url] }
+        return shiftClick
+            .exclusively(before: commandClick)
+            .exclusively(before: plainClick)
     }
 
     private var icon: String {
