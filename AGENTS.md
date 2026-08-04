@@ -12,6 +12,10 @@ Run tests with:
 xcodebuild -project md-vault.xcodeproj -scheme md-vault test 2>&1 | tail -5
 ```
 
+## Development Journal
+
+Keep a local `JOURNAL.md` at the repository root while working. Read existing entries at the start of a task, then append a timestamped update at meaningful milestones such as decisions, implementation changes, validation results, and blockers. Keep entries concise and factual. Do not include secrets. `JOURNAL.md` is ignored by git and must not be committed.
+
 ## Project Overview
 
 md-vault is a native macOS app for viewing and editing a folder ("vault") of markdown files. It is built to coexist with coding agents that read, edit, and create the same files on disk. The editor is a hybrid live-styled source view: the raw markdown source is always the document of record; styling is overlaid attributes only.
@@ -40,6 +44,8 @@ Application state lives in a single `AppState` object (`@Observable` + `.environ
 **SwiftUI only.** Avoid AppKit except where SwiftUI has no reasonable alternative. Current exceptions:
 - `NSOpenPanel` -- vault folder pick/create (`fileImporter` cannot guarantee directory creation)
 - `NSApplication.willTerminateNotification` -- flushing unsaved buffers on quit (no SwiftUI scene-teardown hook on macOS)
+- `NSPasteboard` -- writing full paths from explicitly labeled context-menu actions
+- `NSWorkspace.activateFileViewerSelecting` -- revealing one or more tree items in Finder
 - `FSEventStream*` (CoreServices C API) -- recursive vault directory watching
 
 If a feature requires deeper AppKit integration, reconsider whether it's needed.
@@ -50,7 +56,7 @@ Known framework limits (macOS 26.5, verified): the AttributedString `TextEditor`
 
 **One dependency.** Apple's swift-markdown (the `Markdown` product), for parsing only. No other packages.
 
-**Never clobber external edits.** Agents edit vault files while they're open in the app. Saves are atomic, pre-checked against the last-known disk content, and our own writes are recognized by content comparison (not tokens or mtimes). See `ExternalChange.determine` once it exists; its decision matrix is exhaustively unit-tested.
+**Never clobber external edits.** Agents edit vault files while they're open in the app. Saves are atomic, pre-checked against the last-known disk content, and our own writes are recognized by content comparison (not tokens or mtimes). See `ExternalChange.determine`; its decision matrix is exhaustively unit-tested.
 
 ## Style Preferences
 
