@@ -41,7 +41,7 @@
 		B100000000000000000008 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VaultItem.swift"; sourceTree = "<group>"; };
 		B100000000000000000009 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VaultPickerView.swift"; sourceTree = "<group>"; };
 		B10000000000000000000A = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SidebarView.swift"; sourceTree = "<group>"; };
-		B10000000000000000000B = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileTreeRowView.swift"; sourceTree = "<group>"; };
+		B10000000000000000000B = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileTreeView.swift"; sourceTree = "<group>"; };
 		B10000000000000000000C = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ExternalChange.swift"; sourceTree = "<group>"; };
 		B10000000000000000000D = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VaultWatcher.swift"; sourceTree = "<group>"; };
 		B10000000000000000000E = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConflictBannerView.swift"; sourceTree = "<group>"; };

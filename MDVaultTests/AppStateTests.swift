@@ -71,9 +71,28 @@ struct AppStateTests {
         fixture.openFirstFile()
 
         fixture.state.selectedItemURLs = [fixture.secondFile]
-        fixture.state.selectionDidChange()
+        fixture.state.selectionDidChange(fontSize: 14)
 
         #expect(fixture.state.activeFileURL == fixture.secondFile)
+    }
+
+    // The restore used to land an observation hop later, after a rapid second
+    // click had already written a new selection.
+    @Test func conflictRestoresSelectionWithinTheSameSelectionChange() throws {
+        let fixture = try Fixture()
+        defer { fixture.remove() }
+        fixture.openFirstFile()
+        let document = try #require(fixture.state.openDocument)
+        document.noteEdit("# local edit")
+        try "# external edit".write(to: fixture.firstFile, atomically: true, encoding: .utf8)
+
+        fixture.state.selectedItemURLs = [fixture.secondFile]
+        fixture.state.selectionDidChange(fontSize: 14)
+
+        #expect(fixture.state.activeFileURL == fixture.firstFile)
+        #expect(fixture.state.selectedItemURLs == [fixture.firstFile])
+        #expect(fixture.state.openDocument === document)
+        #expect(document.conflict == .modified)
     }
 
     @Test func extendingSelectionKeepsActiveMarkdown() throws {
@@ -82,7 +101,7 @@ struct AppStateTests {
         fixture.openFirstFile()
 
         fixture.state.selectedItemURLs.insert(fixture.secondFile)
-        fixture.state.selectionDidChange()
+        fixture.state.selectionDidChange(fontSize: 14)
 
         #expect(fixture.state.activeFileURL == fixture.firstFile)
     }
@@ -93,7 +112,7 @@ struct AppStateTests {
         fixture.openFirstFile()
 
         fixture.state.selectedItemURLs = [fixture.firstFile, fixture.secondFile]
-        fixture.state.selectionDidChange()
+        fixture.state.selectionDidChange(fontSize: 14)
 
         #expect(fixture.state.activeFileURL == fixture.firstFile)
     }
@@ -108,7 +127,7 @@ struct AppStateTests {
         fixture.state.rescanTree()
 
         fixture.state.selectedItemURLs = [asset]
-        fixture.state.selectionDidChange()
+        fixture.state.selectionDidChange(fontSize: 14)
 
         #expect(fixture.state.activeFileURL == fixture.firstFile)
         #expect(fixture.state.openDocument === document)

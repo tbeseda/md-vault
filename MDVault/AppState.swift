@@ -115,18 +115,27 @@ final class AppState {
         }
     }
 
-    func selectionDidChange() {
+    /// Settles the whole selection-to-document transition before returning.
+    ///
+    /// A failed save restores both `activeFileURL` and `selectedItemURLs` to the
+    /// conflicted document. Deferring the open to a separate observation of
+    /// `activeFileURL` let that restore land after the next click had already
+    /// written a new selection, stomping it.
+    func selectionDidChange(fontSize: CGFloat) {
+        let desired = desiredActiveFileURL()
+        guard desired != activeFileURL else { return }
+        activeFileURL = desired
+        openActiveFile(fontSize: fontSize)
+    }
+
+    private func desiredActiveFileURL() -> URL? {
         if selectedItemURLs.count == 1,
            let url = selectedItemURLs.first,
            item(at: url)?.isMarkdown == true {
-            activeFileURL = url
-            return
+            return url
         }
-
-        guard activeFileURL.map(selectedItemURLs.contains) != true,
-              let selectedMarkdownURL = firstSelectedMarkdownURL(in: tree)
-        else { return }
-        activeFileURL = selectedMarkdownURL
+        if activeFileURL.map(selectedItemURLs.contains) == true { return activeFileURL }
+        return firstSelectedMarkdownURL(in: tree) ?? activeFileURL
     }
 
     func discardOpenDocument() {

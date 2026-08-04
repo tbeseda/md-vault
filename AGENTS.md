@@ -22,7 +22,7 @@ md-vault is a native macOS app for viewing and editing a folder ("vault") of mar
 
 ## Architecture
 
-Pure SwiftUI, macOS 26 deployment target (requires the AttributedString-backed `TextEditor`). Single `WindowGroup` scene.
+SwiftUI, macOS 26 deployment target (requires the AttributedString-backed `TextEditor`). Single `WindowGroup` scene. The sidebar file tree is the one AppKit-backed pane; see the SwiftUI-only constraint below.
 
 Application state lives in a single `AppState` object (`@Observable` + `.environment()`). Per-file editor state lives in `OpenDocument`.
 
@@ -47,8 +47,19 @@ Application state lives in a single `AppState` object (`@Observable` + `.environ
 - `NSPasteboard` -- writing full paths from explicitly labeled context-menu actions
 - `NSWorkspace.activateFileViewerSelecting` -- revealing one or more tree items in Finder
 - `FSEventStream*` (CoreServices C API) -- recursive vault directory watching
+- `NSOutlineView` via `NSViewRepresentable` (`Views/FileTreeView.swift`) -- the whole sidebar file tree
 
 If a feature requires deeper AppKit integration, reconsider whether it's needed.
+
+### Why the file tree is AppKit
+
+`List(selection:)` + `OutlineGroup` cannot own selection and row dragging at the same time on macOS 26. `draggable(containerItemID:)` consumes clicks in its hit region, so rows over the filename text stopped selecting. Working around that with `simultaneousGesture` tap gestures made the row a second writer to `selectedItemURLs` alongside the `List` binding: two event paths, no ordering guarantee, and rapid clicking left extra rows selected without a modifier held.
+
+`NSOutlineView` resolves selection, dragging, rename, and the context menu in one delegate, which is the coordination SwiftUI could not express here. Do not reintroduce a SwiftUI `List` for the tree. Keep `AppState` the source of truth: the coordinator writes selection on `outlineViewSelectionDidChange` and then re-syncs the view from the model, guarded by `isSyncingSelection`.
+
+Two AppKit behaviours the implementation depends on, both verified on macOS 26.5:
+- Escape aborts the table's field editor **without** posting `controlTextDidEndEditing`, so cancelling a rename is intercepted in `control(_:textView:doCommandBy:)`. Without it the cell stays permanently editable.
+- `NSOutlineView` keys expansion state on item identity, so `FileTreeNode` objects are cached by normalized path and reused across reloads. Rebuilding nodes on every rescan would collapse every folder on each filesystem event.
 
 Known framework limits (macOS 26.5, verified): the AttributedString `TextEditor` ignores "Check Spelling While Typing" (the toggle never latches), and there is no SwiftUI spell-checking API. `TextEditingCommands()` is in the app commands because its Find & Replace bar works; do not add an NSTextView escape hatch just for spelling. It also ignores `contentMargins`; inset the text with `safeAreaPadding` instead.
 
