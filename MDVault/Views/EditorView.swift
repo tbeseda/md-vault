@@ -27,6 +27,10 @@ struct EditorView: View {
                 guard current != document.plainText else { return }
                 document.noteEdit(current)
             }
+            .onKeyPress(.return, phases: .down) { keyPress in
+                guard keyPress.modifiers.isEmpty else { return .ignored }
+                return document.continueList() ? .handled : .ignored
+            }
             .task(id: document.editGeneration) {
                 guard (try? await Task.sleep(for: .milliseconds(150))) != nil else { return }
                 document.restyle(fontSize: editorFontSize)

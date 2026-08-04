@@ -33,6 +33,25 @@ final class OpenDocument {
         editGeneration += 1
     }
 
+    func continueList() -> Bool {
+        guard case .insertionPoint(let insertionPoint) = selection.indices(in: text) else { return false }
+        let characters = text.characters
+        let offset = characters.distance(from: characters.startIndex, to: insertionPoint)
+        guard let edit = MarkdownListContinuation.edit(in: plainText, at: offset) else { return false }
+
+        let sourceLower = plainText.index(plainText.startIndex, offsetBy: edit.replacementRange.lowerBound)
+        let sourceUpper = plainText.index(plainText.startIndex, offsetBy: edit.replacementRange.upperBound)
+        plainText.replaceSubrange(sourceLower..<sourceUpper, with: edit.replacement)
+        editGeneration += 1
+
+        let textLower = text.index(text.startIndex, offsetByCharacters: edit.replacementRange.lowerBound)
+        let textUpper = text.index(text.startIndex, offsetByCharacters: edit.replacementRange.upperBound)
+        text.replaceSubrange(textLower..<textUpper, with: AttributedString(edit.replacement))
+        let restored = text.index(text.startIndex, offsetByCharacters: edit.insertionOffset)
+        selection = AttributedTextSelection(insertionPoint: restored)
+        return true
+    }
+
     // transform(updating:) moves a mid-document insertion point to the end
     // after whole-string setAttributes on macOS 26.5.
     func restyle(fontSize: CGFloat) {
@@ -159,5 +178,101 @@ final class OpenDocument {
             }
             selection = AttributedTextSelection(ranges: rangeSet)
         }
+    }
+}
+
+enum MarkdownListContinuation {
+    struct Edit: Equatable, Sendable {
+        let replacementRange: Range<Int>
+        let replacement: String
+        let insertionOffset: Int
+    }
+
+    static func edit(in source: String, at insertionOffset: Int) -> Edit? {
+        guard insertionOffset >= 0, insertionOffset <= source.count else { return nil }
+        let insertionIndex = source.index(source.startIndex, offsetBy: insertionOffset)
+        let lineStart = source[..<insertionIndex].lastIndex(of: "\n").map { source.index(after: $0) } ?? source.startIndex
+        let lineEnd = source[insertionIndex...].firstIndex(of: "\n") ?? source.endIndex
+        let line = String(source[lineStart..<lineEnd])
+        let offsetInLine = source.distance(from: lineStart, to: insertionIndex)
+        guard let prefix = prefix(in: line), offsetInLine >= prefix.contentOffset else { return nil }
+
+        let contentStart = line.index(line.startIndex, offsetBy: prefix.contentOffset)
+        if line[contentStart...].trimmingCharacters(in: .whitespaces).isEmpty {
+            let lineStartOffset = source.distance(from: source.startIndex, to: lineStart)
+            return Edit(
+                replacementRange: lineStartOffset..<(lineStartOffset + prefix.contentOffset),
+                replacement: "",
+                insertionOffset: lineStartOffset
+            )
+        }
+
+        let replacement = "\n" + prefix.next
+        return Edit(
+            replacementRange: insertionOffset..<insertionOffset,
+            replacement: replacement,
+            insertionOffset: insertionOffset + replacement.count
+        )
+    }
+
+    private struct Prefix {
+        let contentOffset: Int
+        let next: String
+    }
+
+    private static func prefix(in line: String) -> Prefix? {
+        var index = line.startIndex
+        while index < line.endIndex, line[index] == " " || line[index] == "\t" {
+            index = line.index(after: index)
+        }
+        let indentation = String(line[..<index])
+
+        let marker: String
+        let nextMarker: String
+        if index < line.endIndex, "-*+".contains(line[index]) {
+            marker = String(line[index])
+            nextMarker = marker
+            index = line.index(after: index)
+        } else {
+            let numberStart = index
+            while index < line.endIndex, line[index].isNumber {
+                index = line.index(after: index)
+            }
+            guard numberStart < index,
+                  index < line.endIndex,
+                  line[index] == "." || line[index] == ")",
+                  let number = Int(line[numberStart..<index])
+            else { return nil }
+            let delimiter = line[index]
+            marker = String(line[numberStart...index])
+            let (nextNumber, overflow) = number.addingReportingOverflow(1)
+            nextMarker = overflow ? marker : "\(nextNumber)\(delimiter)"
+            index = line.index(after: index)
+        }
+
+        let spacingStart = index
+        while index < line.endIndex, line[index] == " " || line[index] == "\t" {
+            index = line.index(after: index)
+        }
+        guard spacingStart < index else { return nil }
+        let markerSpacing = String(line[spacingStart..<index])
+
+        var taskPrefix: String?
+        if line[index...].hasPrefix("[ ]") || line[index...].hasPrefix("[x]") || line[index...].hasPrefix("[X]") {
+            let taskEnd = line.index(index, offsetBy: 3)
+            guard taskEnd == line.endIndex || line[taskEnd] == " " || line[taskEnd] == "\t" else { return nil }
+            index = taskEnd
+            let taskSpacingStart = index
+            while index < line.endIndex, line[index] == " " || line[index] == "\t" {
+                index = line.index(after: index)
+            }
+            let taskSpacing = taskSpacingStart < index ? String(line[taskSpacingStart..<index]) : " "
+            taskPrefix = "[ ]" + taskSpacing
+        }
+
+        return Prefix(
+            contentOffset: line.distance(from: line.startIndex, to: index),
+            next: indentation + nextMarker + markerSpacing + (taskPrefix ?? "")
+        )
     }
 }
